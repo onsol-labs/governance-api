@@ -1,4 +1,5 @@
 import { getFavoriteDomain } from '@bonfida/spl-name-service';
+import { TldParser } from '@onsol/tldparser';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
@@ -40,7 +41,7 @@ export class DiscordUserService {
     @InjectRepository(DiscordUser)
     private readonly discordUserRepository: Repository<DiscordUser>,
     private readonly configService: ConfigService,
-  ) {}
+  ) { }
 
   heliusUrlOptions() {
     return `?api-key=${this.configService.get('helius.apiKey')}`;
@@ -264,6 +265,11 @@ export class DiscordUserService {
       const { reverse } = await getFavoriteDomain(connection, publicKey);
       this.logger.verbose({ reverse });
       body['platform_username'] = `${reverse}.sol`;
+      // ans domain main domain
+      const parser = new TldParser(connection);
+      const mainDomain = await parser.getMainDomain(publicKey);
+      this.logger.verbose(`ANS Main Domain: ${mainDomain.domain}${mainDomain.tld}`);
+      body.metadata['ans_main_domain'] = `${mainDomain.domain}${mainDomain.tld}`;
     } catch (e) {
       this.logger.verbose(e);
     }
